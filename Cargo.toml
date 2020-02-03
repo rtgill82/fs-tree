@@ -1,0 +1,7 @@
+[package]
+name = "fs-tree"
+version = "0.1.0"
+authors = ["Robert Gill <locke@sdf.org>"]
+description = "An iterator that traverses an entire directory tree."
+edition = "2018"
+license = "MIT"
