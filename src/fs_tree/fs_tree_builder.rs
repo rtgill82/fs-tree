@@ -22,20 +22,26 @@ impl FsTreeBuilder
         FsTreeBuilder { path, ..Default::default() }
     }
 
-    pub fn set_ignore_paths<P>(mut self, paths: &[P]) -> Self
+    pub fn ignore_paths<P>(mut self, paths: &[P]) -> Self
         where P: AsRef<Path>
     {
-        let ignore_paths = paths.iter()
-            .map(|p| {
-                p.as_ref().to_path_buf()
-            }).collect();
-        self.ignore_paths = Some(ignore_paths);
+        Self::_set_ignore_paths(&mut self, paths);
         self
     }
 
-    pub fn set_max_depth(mut self, value: usize) -> Self {
+    pub fn set_ignore_paths<P>(&mut self, paths: &[P])
+        where P: AsRef<Path>
+    {
+        Self::_set_ignore_paths(self, paths);
+    }
+
+    pub fn max_depth(mut self, value: usize) -> Self {
         self.max_depth = Some(value);
         self
+    }
+
+    pub fn set_max_depth(&mut self, value: usize) {
+        self.max_depth = Some(value);
     }
 
     pub fn build(self) -> Result<FsTree, Error> {
@@ -48,5 +54,15 @@ impl FsTreeBuilder
             ignore_paths: self.ignore_paths,
             max_depth: self.max_depth
         })
+    }
+
+    fn _set_ignore_paths<P>(&mut self, paths: &[P])
+        where P: AsRef<Path>
+    {
+        let ignore_paths = paths.iter()
+            .map(|p| {
+                p.as_ref().to_path_buf()
+            }).collect();
+        self.ignore_paths = Some(ignore_paths);
     }
 }
