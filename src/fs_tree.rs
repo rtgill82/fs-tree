@@ -1,90 +1,79 @@
+use std::cell::{Cell,RefCell,RefMut};
 use std::path::PathBuf;
 use std::result::Result as StdResult;
-use std::fs;
 
 pub mod fs_tree_builder;
-pub mod read_dir;
+pub mod into_iter;
+pub mod iter;
 
 use crate::error::Error;
-use self::read_dir::ReadDir;
+use crate::read_dir::ReadDir;
+use self::into_iter::IntoIter;
+use self::iter::Iter;
 
 pub type Result = StdResult<PathBuf, Error>;
-type OptResult = Option<Result>;
 
-macro_rules! try_opt {
-    ($e:expr) => {
-        match $e {
-            Ok(val)  => val,
-            Err(err) => return Some(Err(err)),
-        }
-    }
-}
-
-#[derive(Default)]
 pub struct FsTree
 {
-    stack: Vec<ReadDir>,
+    top: Cell<Option<ReadDir>>,
+    stack: RefCell<Vec<ReadDir>>,
+    ignore_files: Option<Vec<PathBuf>>,
     ignore_paths: Option<Vec<PathBuf>>,
     max_depth: Option<usize>
 }
 
-impl FsTree
-{
-    fn next_entry(rd: &mut ReadDir, ign: &Option<Vec<PathBuf>>) -> OptResult {
-        while let Some(entry) = try_opt!(rd.next()) {
-            if let Some(ignore_paths) = ign {
-                if ignore_paths.contains(&entry) {
-                    continue;
-                }
-            }
-            return Some(Ok(entry));
-        }
-        None
+impl FsTree {
+    pub fn iter(&self) -> Iter {
+        Iter(self)
     }
 
-    fn push_dir(&mut self, path: &PathBuf) -> StdResult<(), Error> {
-        if let Some(max_depth) = self.max_depth {
-            if self.stack.len() > max_depth {
-                return Ok(());
-            }
-        }
+    pub(crate) fn top(&self) -> Option<ReadDir> {
+        self.top.replace(None)
+    }
 
-        let read_dir = ReadDir::new(path)?;
-        self.stack.push(read_dir);
-        Ok(())
+    pub(crate) fn stack(&self) -> RefMut<Vec<ReadDir>> {
+        self.stack.borrow_mut()
+    }
+
+    pub(crate) fn ignore_file(&self, path: &PathBuf) -> bool {
+        if let Some(ignore_files) = &self.ignore_files {
+            ignore_files.contains(path)
+        } else {
+            false
+        }
+    }
+
+    pub(crate) fn ignore_path(&self, path: &PathBuf) -> bool {
+        if let Some(ignore_paths) = &self.ignore_paths {
+            ignore_paths.contains(path)
+        } else {
+            false
+        }
+    }
+
+    pub(crate) fn depth(&self) -> usize {
+        self.stack.borrow().len()
+    }
+
+    pub(crate) fn max_depth(&self) -> Option<usize> {
+        self.max_depth
     }
 }
 
-impl Iterator for FsTree
-{
+impl IntoIterator for FsTree {
     type Item = Result;
+    type IntoIter = IntoIter;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let ignore_paths = &self.ignore_paths;
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter(self)
+    }
+}
 
-        while let Some(read_dir) = self.stack.last_mut() {
-            if let Some(result) = Self::next_entry(read_dir, ignore_paths) {
-                if result.is_err() {
-                    return Some(Err(result.unwrap_err()));
-                }
+impl<'a> IntoIterator for &'a FsTree {
+    type Item = Result;
+    type IntoIter = Iter<'a>;
 
-                let entry = result.unwrap();
-                let stat = fs::symlink_metadata(&entry);
-                if stat.is_err() {
-                    return Some(Err(Error::new(&entry, stat.unwrap_err())));
-                }
-
-                let stat = stat.unwrap();
-                if !stat.file_type().is_symlink() && stat.is_dir() {
-                    if let Err(err) = Self::push_dir(self, &entry) {
-                        return Some(Err(err));
-                    }
-                }
-
-                return Some(Ok(entry));
-            }
-            self.stack.pop();
-        }
-        None
+    fn into_iter(self) -> Self::IntoIter {
+        Iter(self)
     }
 }
