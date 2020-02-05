@@ -1,8 +1,10 @@
 use std::convert::AsRef;
 use std::path::{Path,PathBuf};
+use std::result::Result as StdResult;
 use std::{fmt,fs};
 
 use crate::Error;
+use crate::fs_tree::Result;
 
 #[derive(Debug)]
 pub struct ReadDir
@@ -13,7 +15,7 @@ pub struct ReadDir
 
 impl ReadDir
 {
-    pub fn new<P>(path: P) -> Result<ReadDir, Error>
+    pub fn new<P>(path: P) -> StdResult<ReadDir, Error>
         where P: AsRef<Path>
     {
         let inner = fs::read_dir(&path)
@@ -22,13 +24,17 @@ impl ReadDir
         Ok(ReadDir { inner, path })
     }
 
-    pub fn next(&mut self) -> Result<Option<PathBuf>, Error> {
+    pub fn path(&self) -> PathBuf {
+        self.path.clone()
+    }
+
+    pub fn next(&mut self) -> Option<Result> {
         self.inner.next().map(|result| {
             match result {
                 Ok(entry) => Ok(entry.path()),
                 Err(err)  => Err(Error::new(&self.path, err))
             }
-        }).transpose()
+        })
     }
 }
 
