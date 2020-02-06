@@ -34,7 +34,7 @@ impl FsTreeBuilder
     pub fn set_ignore_files<P>(&mut self, paths: &[P])
         where P: AsRef<Path>
     {
-        Self::_set_ignore_paths(self, paths);
+        Self::_set_ignore_files(self, paths);
     }
 
     pub fn ignore_paths<P>(mut self, paths: &[P]) -> Self

@@ -73,7 +73,10 @@ pub trait FsTreeIter {
             let mut stack = self.stack();
             let path = read_dir.path();
             stack.push(read_dir);
-            return Some(Ok(path));
+
+            if !self.ignore_file(&path) {
+                return Some(Ok(path));
+            }
         }
 
         if self.max_depth() == Some(0) { return None; }
