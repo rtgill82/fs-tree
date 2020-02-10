@@ -17,28 +17,19 @@ macro_rules! try_opt {
 }
 
 pub trait FsTreeIter {
-    fn top(&self) -> Option<ReadDir>;
+    fn top(&self) -> &PathBuf;
     fn stack(&self) -> RefMut<Vec<ReadDir>>;
+    fn push_dir(&self, path: &PathBuf) -> StdResult<(), Error>;
+    fn pop_dir(&self);
     fn ignore_file(&self, path: &PathBuf) -> bool;
     fn ignore_path(&self, path: &PathBuf) -> bool;
     fn depth(&self) -> usize;
     fn max_depth(&self) -> Option<usize>;
-
-    fn push_dir(&self, path: &PathBuf) -> StdResult<(), Error> {
-        if let Some(max_depth) = self.max_depth() {
-            if self.depth() >= max_depth {
-                return Ok(());
-            }
-        }
-
-        let read_dir = ReadDir::new(path)?;
-        self.stack().push(read_dir);
-        Ok(())
-    }
+    fn min_depth(&self) -> usize;
 
     fn next_entry(&self) -> Option<Result> {
-        let mut stack = self.stack();
         loop {
+            let mut stack = self.stack();
             let read_dir = match stack.last_mut() {
                 Some(read_dir) => read_dir,
                 None           => return None
@@ -53,6 +44,7 @@ pub trait FsTreeIter {
                                      self.ignore_path(&entry);
 
                         if ignore {
+                            drop(stack);
                             continue;
                         } else {
                             return Some(Ok(entry));
@@ -61,7 +53,8 @@ pub trait FsTreeIter {
                 },
 
                 None => {
-                    stack.pop();
+                    drop(stack);
+                    self.pop_dir();
                     continue;
                 }
             };
@@ -69,31 +62,36 @@ pub trait FsTreeIter {
     }
 
     fn next_iter(&self) -> Option<Result> {
-        if let Some(read_dir) = self.top() {
-            let mut stack = self.stack();
-            let path = read_dir.path();
-            stack.push(read_dir);
-
-            if !self.ignore_file(&path) {
+        if self.depth() == 0 {
+            try_opt!(self.push_dir(self.top()));
+            let path = self.top().clone();
+            if !self.ignore_file(&path) && self.min_depth() == 0 {
                 return Some(Ok(path));
             }
         }
 
         if self.max_depth() == Some(0) { return None; }
-        let entry =  try_opt!(self.next_entry()?);
-        let stat = fs::symlink_metadata(&entry);
-        if stat.is_err() {
-            return Some(Err(Error::new(&entry, stat.unwrap_err())));
-        }
-
-        let stat = stat.unwrap();
-        let ignore = self.ignore_path(&entry);
-        if !ignore && !stat.file_type().is_symlink() && stat.is_dir() {
-            if let Err(err) = Self::push_dir(self, &entry) {
-                return Some(Err(err));
+        loop {
+            let entry =  try_opt!(self.next_entry()?);
+            let stat = fs::symlink_metadata(&entry);
+            if stat.is_err() {
+                return Some(Err(Error::new(&entry, stat.unwrap_err())));
             }
-        }
 
-        Some(Ok(entry))
+            let depth = self.depth();
+            let stat = stat.unwrap();
+            let ignore = self.ignore_path(&entry);
+            if !ignore && !stat.file_type().is_symlink() && stat.is_dir() {
+                if let Err(err) = self.push_dir(&entry) {
+                    return Some(Err(err));
+                }
+            }
+
+            if depth < self.min_depth() {
+                continue;
+            }
+
+            return Some(Ok(entry));
+        }
     }
 }

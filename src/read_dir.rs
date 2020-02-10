@@ -24,10 +24,6 @@ impl ReadDir
         Ok(ReadDir { inner, path })
     }
 
-    pub fn path(&self) -> PathBuf {
-        self.path.clone()
-    }
-
     pub fn next(&mut self) -> Option<Result> {
         self.inner.next().map(|result| {
             match result {
