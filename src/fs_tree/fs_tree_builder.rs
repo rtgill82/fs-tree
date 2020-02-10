@@ -1,10 +1,9 @@
-use std::cell::{Cell,RefCell};
+use std::cell::RefCell;
 use std::convert::AsRef;
 use std::path::{Path,PathBuf};
 
 use crate::error::Error;
 use crate::fs_tree::FsTree;
-use crate::fs_tree::ReadDir;
 
 #[derive(Default)]
 pub struct FsTreeBuilder
@@ -12,7 +11,8 @@ pub struct FsTreeBuilder
     path: PathBuf,
     ignore_files: Option<Vec<PathBuf>>,
     ignore_paths: Option<Vec<PathBuf>>,
-    max_depth: Option<usize>
+    max_depth: Option<usize>,
+    min_depth: usize
 }
 
 impl FsTreeBuilder
@@ -59,14 +59,24 @@ impl FsTreeBuilder
         self.max_depth = Some(value);
     }
 
+    pub fn min_depth(mut self, value: usize) -> Self {
+        self.min_depth = value;
+        self
+    }
+
+    pub fn set_min_depth(&mut self, value: usize) {
+        self.min_depth = value;
+    }
+
     pub fn build(self) -> Result<FsTree, Error> {
-        let read_dir = ReadDir::new(self.path)?;
         Ok(FsTree {
-            top: Cell::new(Some(read_dir)),
+            top: self.path,
             stack: RefCell::new(Vec::new()),
             ignore_files: self.ignore_files,
             ignore_paths: self.ignore_paths,
-            max_depth: self.max_depth
+            max_depth: self.max_depth,
+            min_depth: self.min_depth,
+            ..Default::default()
         })
     }
 

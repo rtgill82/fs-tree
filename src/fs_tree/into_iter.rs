@@ -1,20 +1,30 @@
 use std::cell::RefMut;
 use std::path::PathBuf;
+use std::result::Result as StdResult;
 
+use crate::Error;
 use crate::fs_tree::FsTree;
-use crate::fs_tree::Result;
 use crate::fs_tree_iter::FsTreeIter;
+use crate::fs_tree::Result;
 use crate::read_dir::ReadDir;
 
 pub struct IntoIter(pub(crate) FsTree);
 
 impl FsTreeIter for IntoIter {
-    fn top(&self) -> Option<ReadDir> {
+    fn top(&self) -> &PathBuf {
         self.0.top()
     }
 
     fn stack(&self) -> RefMut<Vec<ReadDir>> {
         self.0.stack()
+    }
+
+    fn push_dir(&self, path: &PathBuf) -> StdResult<(), Error> {
+        self.0.push_dir(path)
+    }
+
+    fn pop_dir(&self) {
+        self.0.pop_dir();
     }
 
     fn ignore_file(&self, path: &PathBuf) -> bool {
@@ -31,6 +41,10 @@ impl FsTreeIter for IntoIter {
 
     fn max_depth(&self) -> Option<usize> {
         self.0.max_depth()
+    }
+
+    fn min_depth(&self) -> usize {
+        self.0.min_depth()
     }
 }
 

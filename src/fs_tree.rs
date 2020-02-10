@@ -13,13 +13,16 @@ use self::iter::Iter;
 
 pub type Result = StdResult<PathBuf, Error>;
 
+#[derive(Default)]
 pub struct FsTree
 {
-    top: Cell<Option<ReadDir>>,
+    top: PathBuf,
     stack: RefCell<Vec<ReadDir>>,
+    cur_depth: Cell<usize>,
     ignore_files: Option<Vec<PathBuf>>,
     ignore_paths: Option<Vec<PathBuf>>,
-    max_depth: Option<usize>
+    max_depth: Option<usize>,
+    min_depth: usize
 }
 
 impl FsTree {
@@ -27,12 +30,38 @@ impl FsTree {
         Iter(self)
     }
 
-    pub(crate) fn top(&self) -> Option<ReadDir> {
-        self.top.replace(None)
+    pub(crate) fn top(&self) -> &PathBuf {
+        &self.top
     }
 
     pub(crate) fn stack(&self) -> RefMut<Vec<ReadDir>> {
         self.stack.borrow_mut()
+    }
+
+    pub(crate) fn push_dir(&self, path: &PathBuf) -> StdResult<(), Error> {
+        if let Some(max_depth) = self.max_depth() {
+            if self.depth() >= max_depth {
+                return Ok(());
+            }
+        }
+
+        let read_dir = ReadDir::new(path)?;
+        self.stack().push(read_dir);
+
+        let cur_depth = self.cur_depth.get();
+        self.cur_depth.set(cur_depth + 1);
+
+        Ok(())
+    }
+
+    pub(crate) fn pop_dir(&self) {
+        self.stack().pop();
+        let cur_depth = self.cur_depth.get();
+        self.cur_depth.set(cur_depth - 1);
+    }
+
+    pub(crate) fn depth(&self) -> usize {
+        self.cur_depth.get()
     }
 
     pub(crate) fn ignore_file(&self, path: &PathBuf) -> bool {
@@ -51,12 +80,12 @@ impl FsTree {
         }
     }
 
-    pub(crate) fn depth(&self) -> usize {
-        self.stack.borrow().len()
-    }
-
     pub(crate) fn max_depth(&self) -> Option<usize> {
         self.max_depth
+    }
+
+    pub(crate) fn min_depth(&self) -> usize {
+        self.min_depth
     }
 }
 
