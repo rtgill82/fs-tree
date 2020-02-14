@@ -2,7 +2,6 @@ use std::cell::RefCell;
 use std::convert::AsRef;
 use std::path::{Path,PathBuf};
 
-use crate::error::Error;
 use crate::fs_tree::FsTree;
 
 #[derive(Default)]
@@ -68,8 +67,8 @@ impl FsTreeBuilder
         self.min_depth = value;
     }
 
-    pub fn build(self) -> Result<FsTree, Error> {
-        Ok(FsTree {
+    pub fn build(self) -> FsTree {
+        FsTree {
             top: self.path,
             stack: RefCell::new(Vec::new()),
             ignore_files: self.ignore_files,
@@ -77,7 +76,7 @@ impl FsTreeBuilder
             max_depth: self.max_depth,
             min_depth: self.min_depth,
             ..Default::default()
-        })
+        }
     }
 
     fn _set_ignore_files<P>(&mut self, paths: &[P])
