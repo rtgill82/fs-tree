@@ -1,8 +1,9 @@
 [package]
 name = "fs-tree"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Robert Gill <locke@sdf.org>"]
 description = "An iterator that traverses an entire directory tree."
+repository = "https://github.com/xelkarin/fs-tree"
 edition = "2018"
 license = "MIT"
 categories = ["filesystem", "rust-patterns"]
