@@ -4,6 +4,9 @@ use std::path::{Path,PathBuf};
 
 use crate::fs_tree::FsTree;
 
+///
+/// Configure and build an `FsTree` iterator.
+///
 #[derive(Default)]
 pub struct FsTreeBuilder
 {
@@ -16,6 +19,9 @@ pub struct FsTreeBuilder
 
 impl FsTreeBuilder
 {
+    ///
+    /// Create a new `FsTreeBuilder` with a root directory of `path`.
+    ///
     pub fn new<P>(path: P) -> FsTreeBuilder
         where P: AsRef<Path>
     {
@@ -23,6 +29,9 @@ impl FsTreeBuilder
         FsTreeBuilder { path, ..Default::default() }
     }
 
+    ///
+    /// Ignore specified files in the iterator (chainable).
+    ///
     pub fn ignore_files<P>(mut self, paths: &[P]) -> Self
         where P: AsRef<Path>
     {
@@ -30,12 +39,18 @@ impl FsTreeBuilder
         self
     }
 
+    ///
+    /// Ignore specified files in the iterator.
+    ///
     pub fn set_ignore_files<P>(&mut self, paths: &[P])
         where P: AsRef<Path>
     {
         Self::_set_ignore_files(self, paths);
     }
 
+    ///
+    /// Ignore specified directory trees in the iterator (chainable).
+    ///
     pub fn ignore_paths<P>(mut self, paths: &[P]) -> Self
         where P: AsRef<Path>
     {
@@ -43,30 +58,48 @@ impl FsTreeBuilder
         self
     }
 
+    ///
+    /// Ignore specified directory trees in the iterator.
+    ///
     pub fn set_ignore_paths<P>(&mut self, paths: &[P])
         where P: AsRef<Path>
     {
         Self::_set_ignore_paths(self, paths);
     }
 
+    ///
+    /// Set a maximum directory depth (chainable).
+    ///
     pub fn max_depth(mut self, value: usize) -> Self {
         self.max_depth = Some(value);
         self
     }
 
+    ///
+    /// Set a maximum directory depth.
+    ///
     pub fn set_max_depth(&mut self, value: usize) {
         self.max_depth = Some(value);
     }
 
+    ///
+    /// Set a minimum directory depth (chainable).
+    ///
     pub fn min_depth(mut self, value: usize) -> Self {
         self.min_depth = value;
         self
     }
 
+    ///
+    /// Set a minimimum directory depth.
+    ///
     pub fn set_min_depth(&mut self, value: usize) {
         self.min_depth = value;
     }
 
+    ///
+    /// Create the `FsTree` iterator.
+    ///
     pub fn build(self) -> FsTree {
         FsTree {
             top: self.path,
