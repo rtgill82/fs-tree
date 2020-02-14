@@ -1,6 +1,6 @@
-use std::cell::{Cell,RefCell,RefMut};
+use std::cell::{RefCell,RefMut};
 use std::path::PathBuf;
-use std::result::Result as StdResult;
+use std::result;
 
 pub mod fs_tree_builder;
 pub mod into_iter;
@@ -11,14 +11,13 @@ use crate::read_dir::ReadDir;
 use self::into_iter::IntoIter;
 use self::iter::Iter;
 
-pub type Result = StdResult<PathBuf, Error>;
+pub type Result = result::Result<PathBuf, Error>;
 
 #[derive(Default)]
 pub struct FsTree
 {
     top: PathBuf,
     stack: RefCell<Vec<ReadDir>>,
-    cur_depth: Cell<usize>,
     ignore_files: Option<Vec<PathBuf>>,
     ignore_paths: Option<Vec<PathBuf>>,
     max_depth: Option<usize>,
@@ -38,7 +37,7 @@ impl FsTree {
         self.stack.borrow_mut()
     }
 
-    pub(crate) fn push_dir(&self, path: &PathBuf) -> StdResult<(), Error> {
+    pub(crate) fn push_dir(&self, path: &PathBuf) -> result::Result<(), Error> {
         if let Some(max_depth) = self.max_depth() {
             if self.depth() >= max_depth {
                 return Ok(());
@@ -48,20 +47,11 @@ impl FsTree {
         let read_dir = ReadDir::new(path)?;
         self.stack().push(read_dir);
 
-        let cur_depth = self.cur_depth.get();
-        self.cur_depth.set(cur_depth + 1);
-
         Ok(())
     }
 
-    pub(crate) fn pop_dir(&self) {
-        self.stack().pop();
-        let cur_depth = self.cur_depth.get();
-        self.cur_depth.set(cur_depth - 1);
-    }
-
     pub(crate) fn depth(&self) -> usize {
-        self.cur_depth.get()
+        self.stack().len()
     }
 
     pub(crate) fn ignore_file(&self, path: &PathBuf) -> bool {

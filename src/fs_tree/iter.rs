@@ -1,6 +1,6 @@
 use std::cell::RefMut;
 use std::path::PathBuf;
-use std::result::Result as StdResult;
+use std::result;
 
 use crate::Error;
 use crate::fs_tree::FsTree;
@@ -19,12 +19,8 @@ impl<'a> FsTreeIter for Iter<'a> {
         self.0.stack()
     }
 
-    fn push_dir(&self, path: &PathBuf) -> StdResult<(), Error> {
+    fn push_dir(&self, path: &PathBuf) -> result::Result<(), Error> {
         self.0.push_dir(path)
-    }
-
-    fn pop_dir(&self) {
-        self.0.pop_dir();
     }
 
     fn ignore_file(&self, path: &PathBuf) -> bool {

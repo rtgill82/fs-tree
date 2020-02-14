@@ -1,7 +1,6 @@
 use std::convert::AsRef;
 use std::path::{Path,PathBuf};
-use std::result::Result as StdResult;
-use std::{fmt,fs};
+use std::{fmt,fs,result};
 
 use crate::Error;
 use crate::fs_tree::Result;
@@ -15,7 +14,7 @@ pub struct ReadDir
 
 impl ReadDir
 {
-    pub fn new<P>(path: P) -> StdResult<ReadDir, Error>
+    pub fn new<P>(path: P) -> result::Result<ReadDir, Error>
         where P: AsRef<Path>
     {
         let inner = fs::read_dir(&path)
