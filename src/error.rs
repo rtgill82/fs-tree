@@ -1,6 +1,9 @@
 use std::path::{Path,PathBuf};
 use std::{error,fmt,io};
 
+///
+/// `FsTree` error
+///
 #[derive(Debug)]
 pub struct Error {
     entry: PathBuf,

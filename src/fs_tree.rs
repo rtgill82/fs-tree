@@ -13,6 +13,9 @@ use self::iter::Iter;
 
 pub type Result = result::Result<PathBuf, Error>;
 
+///
+/// An iterator that traverses a file system directory tree.
+///
 #[derive(Default)]
 pub struct FsTree
 {
