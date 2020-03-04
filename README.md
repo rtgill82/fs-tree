@@ -2,6 +2,14 @@
 
 _An iterator that traverses an entire directory tree._
 
+**NOTICE:** I'm deprecating this crate in favor of [`walkdir`][walkdir],
+which I did not notice before I wrote this. It's better named and
+probably better written.
+
+[walkdir]: https://crates.io/crates/walkdir
+
+## Description
+
 An iterater that traverses and entire directory tree. It can be
 configured to exclude specific files or entire directory trees.
 A minimum or maximum directory depth may also be set.
