@@ -1,6 +1,6 @@
 [package]
 name = "fs-tree"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Robert Gill <rtgill82@gmail.com>"]
 description = "An iterator that traverses an entire directory tree."
 repository = "https://github.com/rtgill82/fs-tree"
